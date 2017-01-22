@@ -1,0 +1,5 @@
+{
+    "base-url": "<GitHub API base url>",
+    "user": "<user name>",
+    "token": "<token>"
+}
