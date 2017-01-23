@@ -37,7 +37,7 @@ C: <repository> repository
 C: <config> config
 
 : basic-auth-header ( config -- basic )
-    dup user>> swap token>> basic-auth ;
+    [ user>> ] [ token>> ] bi basic-auth ;
 
 : generate-header ( config -- header )
     dup base-url>> path append
@@ -52,12 +52,12 @@ C: <config> config
     at* drop ;
 
 : read-repositories ( json -- repositories )
-    [| repository |
-        "fork" repository get-value not
+    [
+        "fork" swap get-value not
     ] filter
-    [| repository |
-        "name" repository get-value
-        "ssh_url" repository get-value
+    [
+        [ "name" swap get-value ]
+        [ "ssh_url" swap get-value ] bi
         <repository>
     ] map ;
 
@@ -72,15 +72,16 @@ C: <config> config
 
 : read-config ( path -- config )
     utf8 file-lines concat json>
-    dup "base-url" swap get-value swap
-    dup "user" swap get-value swap
-    "token" swap get-value
+    [ "base-url" swap get-value ]
+    [ "user" swap get-value ]
+    [ "token" swap get-value ] tri
     <config> ;
 
 :: fetch ( dir repositories -- )
     repositories [
-        dup name>> dir swap append-path
-        swap url>> swap dup
+        [ name>> dir swap append-path ]
+        [ url>> ] bi
+        swap dup
         pull-repository-command
         run-process wait-for-process 0 = [
             ! success
