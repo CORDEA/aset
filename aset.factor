@@ -16,12 +16,14 @@
 
 USING: io locals http http.client arrays sequences kernel
 accessors json.reader assocs strings command-line namespaces
-io.encodings.utf8 io.files io.launcher io.pathnames ;
+io.encodings.utf8 io.files io.launcher io.pathnames
+aset.git ;
 IN: aset
 
 <PRIVATE
 
 CONSTANT: path "/user/repos"
+CONSTANT: branch "master"
 
 TUPLE: repository
     { name string read-only }
@@ -61,15 +63,6 @@ C: <config> config
         <repository>
     ] map ;
 
-: pull-repository-command ( dir -- command )
-    "-C" swap "git" -rot 3array
-    { "pull" "origin" "master" }
-    append " " join ;
-
-: clone-repository-command ( url dir -- command )
-    2array { "git" "clone" }
-    swap append " " join ;
-
 : read-config ( path -- config )
     utf8 file-lines concat json>
     [ "base-url" swap get-value ]
@@ -77,17 +70,17 @@ C: <config> config
     [ "token" swap get-value ] tri
     <config> ;
 
-:: fetch ( dir repositories -- )
+:: fetch ( path repositories -- )
     repositories [
-        [ name>> dir swap append-path ]
+        [ name>> path swap append-path <git> ]
         [ url>> ] bi
         swap dup
-        pull-repository-command
+        branch pull-command
         run-process wait-for-process 0 = [
             ! success
             2drop
         ] [
-            dup clone-repository-command
+            swap dup clone-command
             run-process wait-for-process 0 = [
                 ! success
                 drop
